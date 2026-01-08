@@ -1,4 +1,4 @@
-Import os
+import os
 from flask import Flask, request, render_template_string, jsonify, redirect, url_for
 import requests
 from threading import Thread, Event
@@ -477,7 +477,5 @@ def stop_task():
 import os
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', web: gunicorn app:app))
     app.run(host='0.0.0.0', port=port)
-
-New update modified kra isko
