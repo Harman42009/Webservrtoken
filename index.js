@@ -1,168 +1,102 @@
 const express = require('express');
-const messenger = require('fca-project-orion');
-const axios = require('axios');
+const wiegine = require('fca-mafiya');
 const app = express();
-const PORT = process.env.PORT || 10000;
+
+// Render ka port auto-detect karega
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SYSTEM - DEEPAK RAJPUT V3</title>
-    <style>
-        :root { --system-blue: #00c3ff; --shadow-dark: #050a14; --text-glow: 0 0 10px rgba(0, 195, 255, 0.7); }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--shadow-dark); overflow: hidden; font-family: 'Segoe UI', sans-serif; }
-        
-        /* Solo Leveling Particle Animation Canvas */
-        #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; }
-
-        .system-window { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 90%; max-width: 550px; background: rgba(5, 15, 30, 0.85); 
-            border: 2px solid var(--system-blue); border-radius: 5px; 
-            padding: 30px; box-shadow: inset 0 0 20px rgba(0, 195, 255, 0.2), 0 0 30px rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-        }
-
-        .header { border-bottom: 2px solid var(--system-blue); margin-bottom: 20px; padding-bottom: 10px; }
-        h1 { margin: 0; color: var(--system-blue); text-transform: uppercase; letter-spacing: 5px; font-size: 24px; text-shadow: var(--text-glow); }
-        .sub-text { color: #88aadd; font-size: 10px; letter-spacing: 2px; }
-
-        textarea { 
-            width: 100%; height: 160px; background: rgba(0, 0, 0, 0.7); border: 1px solid #1a3a5a; 
-            color: #fff; border-radius: 3px; padding: 15px; box-sizing: border-box; 
-            outline: none; font-family: 'Courier New', monospace; font-size: 13px;
-            transition: 0.3s;
-        }
-        textarea:focus { border-color: var(--system-blue); box-shadow: 0 0 15px rgba(0, 195, 255, 0.3); }
-
-        .btn-container { display: flex; gap: 15px; margin-top: 20px; }
-        .btn { 
-            flex: 1; padding: 12px; background: rgba(0, 50, 80, 0.6); border: 1px solid var(--system-blue); 
-            color: var(--system-blue); cursor: pointer; font-weight: bold; text-transform: uppercase; 
-            transition: 0.3s; letter-spacing: 2px;
-        }
-        .btn:hover { background: var(--system-blue); color: #000; box-shadow: 0 0 20px var(--system-blue); }
-
-        #results { 
-            margin-top: 25px; max-height: 200px; overflow-y: auto; text-align: left; 
-            scrollbar-width: thin; scrollbar-color: var(--system-blue) transparent;
-        }
-        .log { 
-            background: rgba(0, 20, 40, 0.7); border-left: 3px solid var(--system-blue); 
-            padding: 10px; margin-bottom: 8px; font-size: 12px; color: #fff; animation: slideIn 0.3s ease;
-        }
-        @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    </style>
-</head>
-<body>
-    <canvas id="bg-canvas"></canvas>
-
-    <div class="system-window">
-        <div class="header">
-            <h1>SYSTEM INTERFACE</h1>
-            <div class="sub-text">DEEPAK RAJPUT V3 - SHADOW MONARCH EDITION</div>
+// UI Dashboard
+app.get('/', (req, res) => {
+    res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+            body { background: #000; color: #ff0000; font-family: 'Orbitron', sans-serif; text-align: center; padding: 20px; }
+            .container { max-width: 500px; margin: auto; border: 2px solid #ff0000; padding: 30px; border-radius: 15px; background: #0a0a0a; box-shadow: 0 0 25px #ff0000; }
+            textarea { width: 100%; height: 120px; background: #111; color: #00ff00; border: 1px solid #ff0000; border-radius: 5px; padding: 10px; margin: 15px 0; box-sizing: border-box; font-family: monospace; }
+            .btn { width: 100%; padding: 15px; background: #ff0000; color: #fff; font-weight: bold; border: none; cursor: pointer; border-radius: 5px; font-family: 'Orbitron'; transition: 0.3s; }
+            .btn:hover { background: #fff; color: #ff0000; }
+            #result { margin-top: 20px; word-break: break-all; color: #fff; background: #1a1a1a; padding: 15px; display: none; border-radius: 5px; border: 1px dashed #00ff00; text-align: left; font-size: 13px; }
+            .loader { color: #ffaa00; display: none; margin-top: 10px; font-size: 12px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2 style="text-shadow: 0 0 10px #ff0000;">DEEPAK V7 EXTRACTOR</h2>
+            <p style="color: #888; font-size: 12px;">Cookie dalo aur V7 Token (EAAG/EAAB) pao</p>
+            <textarea id="cookieInput" placeholder="Paste your Facebook Cookie here..."></textarea>
+            <button class="btn" onclick="startExtraction()">GENERATE V7 TOKEN</button>
+            <div id="loader" class="loader">Facebook server se connect ho raha hai... Thoda wait kar bhai...</div>
+            <div id="result"></div>
         </div>
-        
-        <textarea id="cookiesInput" placeholder="[INPUT REQUIRED]: Paste AppState (JSON)..."></textarea>
-        
-        <div class="btn-container">
-            <button class="btn" onclick="runTask('check')">Analyze Cookies</button>
-            <button class="btn" onclick="runTask('extract')">Extract Power (Token)</button>
-        </div>
-        
-        <div id="results"></div>
-    </div>
 
-    <script>
-        // Particle Background Logic
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        
-        function initCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
+        <script>
+            async function startExtraction() {
+                const cookie = document.getElementById('cookieInput').value;
+                const resDiv = document.getElementById('result');
+                const loader = document.getElementById('loader');
 
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2;
-                this.speedY = Math.random() * -1.5;
-                this.opacity = Math.random();
+                if(!cookie) return alert("Pehle cookie toh dalo Deepak bhai!");
+                
+                resDiv.style.display = 'none';
+                loader.style.display = 'block';
+
+                try {
+                    const response = await fetch('/get-v7', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cookie })
+                    });
+                    const data = await response.json();
+                    loader.style.display = 'none';
+                    resDiv.style.display = 'block';
+
+                    if(data.success) {
+                        resDiv.innerHTML = "<b style='color:#00ff00;'>SUCCESS! TERA TOKEN:</b><br><br>" + data.token;
+                    } else {
+                        resDiv.innerHTML = "<b style='color:#ff0000;'>ERROR:</b> " + data.message;
+                    }
+                } catch (err) {
+                    loader.style.display = 'none';
+                    alert("Server Error! Check your Render Logs.");
+                }
             }
-            update() {
-                this.y += this.speedY;
-                if (this.y < 0) this.y = canvas.height;
-            }
-            draw() {
-                ctx.fillStyle = \`rgba(0, 195, 255, \${this.opacity})\`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
+        </script>
+    </body>
+    </html>
+    `);
+});
 
-        function createParticles() {
-            for (let i = 0; i < 100; i++) particles.push(new Particle());
-        }
+// Logic to bypass and extract
+app.post('/get-v7', (req, res) => {
+    const { cookie } = req.body;
+    wiegine.login(cookie, { logLevel: "silent", forceLogin: true }, (err, api) => {
+        if (err || !api) return res.json({ success: false, message: "Cookie Dead hai ya IP block hai!" });
 
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => { p.update(); p.draw(); });
-            requestAnimationFrame(animate);
-        }
-
-        window.addEventListener('resize', initCanvas);
-        initCanvas(); createParticles(); animate();
-
-        // Task Logic
-        async function runTask(type) {
-            const input = document.getElementById('cookiesInput').value;
-            const resDiv = document.getElementById('results');
-            if(!input) return;
-            let cookies;
-            try { cookies = JSON.parse(input); if(!Array.isArray(cookies)) cookies = [cookies]; } catch(e) { alert("Format Error!"); return; }
-
-            for(let i=0; i<cookies.length; i++) {
-                const response = await fetch('/api/process', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ appState: cookies[i], type: type })
+        // Method 1: Business Suite (EAAG)
+        api.httpGet("https://business.facebook.com/content_management", (err, resp) => {
+            let token = resp ? resp.match(/(EAAG\w+)/) : null;
+            
+            if (token && token[1]) {
+                res.json({ success: true, token: token[1] });
+            } else {
+                // Method 2: Ads Manager (EAAB) backup
+                api.httpGet("https://adsmanager.facebook.com/adsmanager/manage/campaigns", (err2, resp2) => {
+                    let token2 = resp2 ? resp2.match(/(EAAB\w+)/) : null;
+                    if (token2 && token2[1]) {
+                        res.json({ success: true, token: token2[1] });
+                    } else {
+                        res.json({ success: false, message: "Token nahi mila. Cookie change karke dekho." });
+                    }
                 });
-                const data = await response.json();
-                const log = document.createElement('div');
-                log.className = 'log';
-                log.innerHTML = \`[NOTIFICATION]: \${data.status} - \${type === 'check' ? (data.name || 'Unknown') : (data.token || data.error)}\`;
-                resDiv.prepend(log);
             }
-        }
-    </script>
-</body>
-</html>`;
-
-app.get('/', (req, res) => res.send(html));
-
-app.post('/api/process', (req, res) => {
-    const { appState, type } = req.body;
-    messenger({ appState }, (err, api) => {
-        if (err) return res.json({ status: 'FAILURE', error: "Mana Expired" });
-        if (type === 'check') {
-            api.getUserInfo(api.getCurrentUserID(), (uErr, info) => {
-                res.json({ status: 'SUCCESS', name: uErr ? null : info[api.getCurrentUserID()].name });
-            });
-        } else {
-            api.getAccessToken((tErr, token) => {
-                res.json({ status: 'ARISE', token: token || null, error: "Extraction Failed" });
-            });
-        }
+        });
     });
 });
 
-app.listen(PORT, () => console.log('Shadow Monarch System Online!'));
+app.listen(PORT, () => console.log('Deepak Rajput Extractor Live on Port ' + PORT));
