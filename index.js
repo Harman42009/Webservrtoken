@@ -1,59 +1,42 @@
 const express = require('express');
+const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(express.json());
+
 app.get('/', (req, res) => {
-    res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-            body { background: #000; color: #00ff00; font-family: 'Orbitron', sans-serif; text-align: center; padding: 20px; }
-            .card { max-width: 450px; margin: auto; border: 2px solid #00ff00; padding: 25px; border-radius: 15px; background: #050505; box-shadow: 0 0 20px #00ff00; }
-            textarea { width: 100%; height: 100px; background: #111; color: #fff; border: 1px solid #00ff00; border-radius: 5px; padding: 10px; margin-top: 15px; box-sizing: border-box; }
-            .btn { width: 100%; padding: 15px; background: #00ff00; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 5px; margin-top: 15px; font-family: 'Orbitron'; }
-            #output { margin-top: 20px; word-break: break-all; color: #fff; background: #222; padding: 15px; border-radius: 5px; display: none; border: 1px dashed #00ff00; }
-        </style>
-    </head>
-    <body>
-        <div class="card">
-            <h2>DEEPAK KIWI SPECIAL</h2>
-            <p style="font-size:10px; color:#aaa;">No Server Block - 100% Direct Path</p>
-            <textarea id="cookie" placeholder="Paste Cookie Here..."></textarea>
-            <button class="btn" onclick="extractDirect()">GET V7 TOKEN</button>
-            <div id="output"></div>
-        </div>
-
-        <script>
-            async function extractDirect() {
-                const cookie = document.getElementById('cookie').value;
-                const out = document.getElementById('output');
-                if(!cookie) return alert("Pehle cookie toh dalo!");
-                
-                out.style.display = 'block';
-                out.innerText = "Processing via Kiwi Bridge... Facebook ko bypass kar raha hoon...";
-
-                try {
-                    // Ye part tere browser se request bhejega, Render se nahi
-                    const response = await fetch('https://business.facebook.com/content_management', {
-                        method: 'GET',
-                        credentials: 'omit', // Security bypass
-                        headers: { 'Accept': 'text/html' }
-                    });
-                    
-                    // Note: Browser security headers ki wajah se direct fetch kabhi block hota hai
-                    // Isliye hum user ko batayenge ki ye browser-level par kaise karein
-                    out.innerHTML = "<b>Step 2:</b><br>Facebook Security ne Direct Browser Access roka hai.<br><br><b>Ye Try Karo:</b><br>1. Kiwi mein FB login karo.<br>2. Ek naya tab kholo.<br>3. URL mein ye paste karo: <b>business.facebook.com/content_management</b><br>4. Page khulte hi 'View Source' mein EAAG search karo.";
-                } catch (e) {
-                    out.innerText = "Error: Kiwi Browser ne security block ki. Cookie format check karo.";
-                }
-            }
-        </script>
-    </body>
-    </html>
-    `);
+    res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');body { background: #000; color: #00ff00; font-family: 'Orbitron', sans-serif; text-align: center; padding: 20px; }.box { max-width: 500px; margin: auto; border: 2px solid #00ff00; padding: 25px; border-radius: 15px; background: #080808; box-shadow: 0 0 20px #00ff00; }textarea { width: 100%; height: 100px; background: #111; color: #00ff00; border: 1px solid #333; padding: 10px; margin: 15px 0; box-sizing: border-box; }.btn { width: 100%; padding: 15px; background: #00ff00; color: #000; font-weight: bold; border: none; cursor: pointer; border-radius: 5px; }#res { margin-top: 20px; word-break: break-all; color: #fff; background: #1a1a1a; padding: 15px; display: none; border: 1px dashed #00ff00; }</style></head><body><div class="box"><h2>DEEPAK MULTI-TOKEN</h2><p style="font-size:10px;color:#888;">EAAB / EAAG / EAAV Extractor</p><textarea id="ck" placeholder="Yahan Cookie Paste Karo..."></textarea><button class="btn" onclick="get()">GET ANY TOKEN</button><div id="res"></div></div><script>async function get(){ const out = document.getElementById('res'); out.style.display='block'; out.innerText='Searching for all possible tokens...'; const r = await fetch('/api/multi', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({cookie: document.getElementById('ck').value}) }); const d = await r.json(); if(d.success){ out.innerHTML = "<b>Token Mila:</b><br><br>" + d.token + "<br><br><b>Type:</b> " + d.type; } else { out.innerText = "Error: " + d.message; }}</script></body></html>`);
 });
 
-app.listen(PORT, () => console.log('Kiwi Special Live!'));
+app.post('/api/multi', async (req, res) => {
+    const { cookie } = req.body;
+    try {
+        // Step 1: Ads Manager (EAAB) - Message ke liye Best
+        const adsRes = await axios.get('https://adsmanager.facebook.com/adsmanager/manage/campaigns', {
+            headers: { 'Cookie': cookie, 'User-Agent': 'Mozilla/5.0' }
+        });
+        let token = adsRes.data.match(/(EAAB\w+)/);
+        if (token) return res.json({ success: true, token: token[1], type: "EAAB (Ads Manager)" });
+
+        // Step 2: Business Suite (EAAG)
+        const bizRes = await axios.get('https://business.facebook.com/content_management', {
+            headers: { 'Cookie': cookie, 'User-Agent': 'Mozilla/5.0' }
+        });
+        token = bizRes.data.match(/(EAAG\w+)/);
+        if (token) return res.json({ success: true, token: token[1], type: "EAAG (V7)" });
+
+        // Step 3: Messenger/Basic (EAAV)
+        const msgRes = await axios.get('https://m.facebook.com/composer/ocelot/async_loader/?publisher=feed', {
+            headers: { 'Cookie': cookie, 'User-Agent': 'Mozilla/5.0' }
+        });
+        token = msgRes.data.match(/(EAAV\w+)/);
+        if (token) return res.json({ success: true, token: token[1], type: "EAAV (Messenger)" });
+
+        res.json({ success: false, message: "Koi bhi token nahi mila! Cookie update karo." });
+    } catch (err) {
+        res.json({ success: false, message: "Facebook ne IP Block kar di!" });
+    }
+});
+
+app.listen(PORT);
